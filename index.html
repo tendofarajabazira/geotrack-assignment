@@ -2,182 +2,208 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#102442">
-  <meta name="description" content="Consent-based live location tracking educational demo using browser geolocation and Leaflet GIS maps.">
-  <title>GeoTrack | Live Location GIS Demo</title>
-  <!-- Leaflet 1.9.4 stable: official example CDN and integrity hashes -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#111d32">
+  <meta name="description" content="GeoTrack: a consent-based GPS and GIS location visualization prototype with interactive mapping, geofencing and geospatial data export.">
+  <title>GeoTrack | GIS Location Dashboard</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
   <style>
-    :root {font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#14243a;background:#f3f6fb}
-    * {box-sizing:border-box} body {margin:0} button {font:inherit;cursor:pointer} button:disabled{opacity:.48;cursor:not-allowed}
-    header {background:linear-gradient(110deg,#102442,#1860a1);color:#fff;padding:23px max(18px,calc((100vw - 1180px)/2))}
-    header h1 {margin:0;font-size:clamp(1.45rem,4vw,2.1rem);letter-spacing:-.02em}
-    header p {margin:6px 0 0;color:#d6e8fb;font-size:.97rem}
-    main {max-width:1180px;margin:22px auto;padding:0 16px 26px;display:grid;gap:16px}
-    .notice {background:#eaf4ff;border:1px solid #bddcff;border-radius:13px;padding:13px 16px;line-height:1.55;font-size:.92rem}
-    .tool {display:flex;gap:9px;flex-wrap:wrap;align-items:center;background:#fff;border:1px solid #e0e7f0;padding:14px;border-radius:14px;box-shadow:0 5px 20px #11203908}
-    .btn {border:0;border-radius:9px;color:#fff;padding:11px 15px;font-weight:650;min-height:44px;background:#1670ba}
-    .btn:hover:not(:disabled){filter:brightness(.95)} .btn.secondary{background:#50667d} .btn.warn{background:#c25f22} .btn.outline{background:#fff;border:1px solid #bdcad8;color:#12314e}
-    .status {margin-left:auto;display:flex;align-items:center;gap:8px;color:#4c627c;font-weight:700;font-size:.91rem}
-    .dot {display:inline-block;height:10px;width:10px;border-radius:50%;background:#a2abb9}
-    .dot.live{background:#18a96b} .dot.demo{background:#e8a12a}
-    .mapframe {position:relative;background:#fff;border-radius:15px;overflow:hidden;border:1px solid #dfe8f1;box-shadow:0 5px 20px #1120390c}
-    #map {width:100%;height:min(58vh,520px);min-height:320px;z-index:0}
-    .mapnote {padding:9px 14px;background:#fff;font-size:.83rem;color:#54677e;border-top:1px solid #e6ebf0}
-    .stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
-    .card{background:white;border:1px solid #e1e8f0;border-radius:13px;padding:15px;min-width:0}
-    .card span{display:block;font-size:.83rem;color:#60728a;margin-bottom:8px}
-    .card strong{font-size:clamp(1.04rem,3vw,1.38rem);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
-    .info{background:#fff;border:1px solid #e1e8f0;border-radius:14px;padding:17px;line-height:1.57}
-    .info h2{font-size:1.15rem;margin:0 0 7px} .info p{margin:0 0 10px}
-    footer{font-size:.8rem;color:#617389;text-align:center;padding-bottom:26px}
-    @media(max-width:620px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.status{margin-left:0;width:100%;padding:5px 2px}header{padding:23px 17px}#map{height:47vh;min-height:300px}.btn{flex:1 1 140px}}
+    :root{font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;color:#16263b;background:#f3f6fa;--navy:#111d32;--navy2:#192a42;--cyan:#19a7a5;--cyan-dark:#087e83;--blue:#2f76ca;--muted:#687d91;--border:#e1e8f0;--surface:#fff;--shadow:0 8px 30px rgba(19,40,71,.05)}
+    *{box-sizing:border-box} body{margin:0;min-width:320px} button,select{font:inherit} button{cursor:pointer} button:disabled{cursor:not-allowed;opacity:.5} button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid #6bd9d7;outline-offset:3px} a{color:inherit}
+    .topbar{min-height:70px;background:#fff;border-bottom:1px solid var(--border)}
+    .top-inner{max-width:1480px;margin:auto;padding:15px 28px;display:flex;align-items:center;justify-content:space-between;gap:18px}
+    .brand{display:flex;gap:12px;align-items:center;min-width:0}.logo{width:42px;height:42px;display:grid;place-items:center;background:var(--navy);border-radius:13px;color:#5ce1d7;flex:none}
+    .brandname{font-size:1.21rem;font-weight:800;letter-spacing:-.04em;color:var(--navy)}.brandname span{color:var(--cyan-dark)}.brand-sub{font-size:.73rem;color:#728499;margin-top:3px;font-weight:550}
+    .top-meta{display:flex;align-items:center;gap:12px;color:#718399;font-size:.79rem}.top-meta .divider{height:24px;width:1px;background:#dce4ef}.avatar{width:32px;height:32px;border-radius:50%;background:#e6f5f4;color:#067f81;display:grid;place-items:center;font-weight:800;font-size:.74rem}
+    .container{max-width:1480px;margin:0 auto;padding:30px 28px 35px}
+    .eyebrow{color:#087e83;font-weight:800;font-size:.72rem;text-transform:uppercase;letter-spacing:.14em;margin:0 0 10px}
+    .heading-line{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin:0 0 23px}
+    h1{font-size:clamp(1.55rem,2.4vw,2.25rem);letter-spacing:-.045em;line-height:1.18;margin:0 0 9px;color:var(--navy)}.lead{color:#748497;font-size:.92rem;line-height:1.5;margin:0}
+    .status-wrap{display:flex;align-items:center;gap:9px;border:1px solid #e0e8ee;background:#fff;box-shadow:var(--shadow);border-radius:50px;padding:10px 15px;font-size:.78rem;font-weight:700;color:#556c81;white-space:normal;max-width:360px}
+    .state-dot{width:9px;height:9px;flex:none;border-radius:50%;background:#9daaba}.state-dot.live{background:#0b9d72;box-shadow:0 0 0 4px #dbf6e9}.state-dot.demo{background:#dc9328;box-shadow:0 0 0 4px #fff0d5}
+    .dashboard{display:grid;grid-template-columns:290px minmax(0,1fr);gap:20px;align-items:start}
+    .sidebar{background:var(--navy);border-radius:18px;padding:23px 19px;color:#eef6ff;box-shadow:0 12px 28px #12203a14}
+    .sidebar h2{font-size:1.03rem;margin:0 0 5px;letter-spacing:-.018em}.sidebar .intro{font-size:.8rem;color:#aabbd0;line-height:1.52;margin:0 0 22px}
+    .overline{font-size:.7rem;text-transform:uppercase;font-weight:800;letter-spacing:.12em;color:#8198b3;margin:0 0 11px}
+    .actionstack{display:grid;gap:9px}.btn{display:flex;justify-content:center;align-items:center;gap:8px;min-height:45px;padding:10px 12px;border-radius:10px;border:1px solid transparent;font-weight:720;font-size:.83rem;transition:background .15s ease,transform .15s ease;text-decoration:none}
+    .btn:hover:not(:disabled){transform:translateY(-1px)}.btn.primary{background:#19a7a5;color:#fff}.btn.primary:hover:not(:disabled){background:#0c8c8d}.btn.secondary{background:#243754;color:#eef7ff;border-color:#3b516c}.btn.secondary:hover:not(:disabled){background:#304665}.btn.light{background:#fff;color:#234660}.btn.danger{background:#2b384e;color:#ffbdbb;border-color:#485267}.btn.soft{background:#fff;color:#31536f;border:1px solid #dbe5ef}
+    .twocol{display:grid;grid-template-columns:1fr 1fr;gap:8px}.slideline{height:1px;background:#34465d;margin:22px 0}
+    .option{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:35px;margin:10px 0;font-size:.82rem;color:#dce8f5;font-weight:560}
+    .switch{position:relative;flex:none;display:inline-block;width:42px;height:24px}.switch input{opacity:0;position:absolute;inset:0;width:100%;height:100%;margin:0;z-index:3;cursor:pointer}.slider{position:absolute;inset:0;background:#52677f;border-radius:20px;transition:background .2s}.slider:after{content:"";position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;background:white;transition:transform .2s}.switch input:checked+.slider{background:#19a7a5}.switch input:checked+.slider:after{transform:translateX(18px)}.switch input:focus-visible+.slider{outline:3px solid #6bd9d7;outline-offset:2px}
+    .radius{background:#253956;border:1px solid #4a5e79;border-radius:8px;color:#fff;padding:7px;width:95px;font-size:.81rem}
+    .geostatus{background:#1e334e;border:1px solid #344c6b;padding:12px;border-radius:10px;line-height:1.45;font-size:.78rem;color:#b6d9e2;margin:14px 0 0}
+    .disclaimer-side{font-size:.75rem;color:#a7b8ce;line-height:1.55;margin:0}
+    .workarea{display:grid;gap:16px;min-width:0}
+    .map-card,.metric,.table-card,.info-card{background:var(--surface);border:1px solid var(--border);border-radius:17px;box-shadow:var(--shadow)}
+    .map-header{padding:17px 19px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+    .map-header h2{font-size:1.02rem;letter-spacing:-.025em;margin:0 0 4px}.map-header p{color:#7b8c9d;font-size:.75rem;margin:0}
+    .map-tools{display:flex;gap:7px;align-items:center;flex-wrap:wrap}.mini-btn{font-size:.75rem;font-weight:720;min-height:33px;padding:6px 10px;border:1px solid #dbe5ef;border-radius:8px;background:#f9fbfd;color:#385877}
+    .mini-btn:hover{background:#eef7fb}
+    #map{height:510px;background:#e7edf1;z-index:0;position:relative}
+    .map-frame{position:relative;overflow:hidden;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+    .map-marker{position:absolute;top:14px;right:13px;z-index:500;pointer-events:none;display:flex;align-items:center;gap:7px;background:rgba(17,29,50,.91);color:#fff;padding:8px 10px;border-radius:8px;font-size:.67rem;letter-spacing:.06em;font-weight:800;text-transform:uppercase;box-shadow:0 5px 18px #14243a30}
+    .map-marker .signal{width:7px;height:7px;border-radius:50%;background:#35d3c4}
+    .map-footer{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:13px 18px;font-size:.73rem;color:#6c8298}
+    .legend{display:flex;flex-wrap:wrap;gap:12px}.legenditem{display:inline-flex;gap:7px;align-items:center}.dot{width:10px;height:10px;border-radius:50%;background:#2e79cc}.linekey{width:19px;height:4px;border-radius:3px;background:#2e79cc}.fencekey{width:12px;height:12px;border:2px dashed #dc9328;border-radius:50%}
+    .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px}.metric{padding:17px;min-width:0}.metric .label{font-size:.73rem;color:#7a8b9d;font-weight:670;display:block;margin-bottom:10px}.metric strong{font-size:clamp(.97rem,1.4vw,1.38rem);font-weight:790;color:#12233c;letter-spacing:-.028em;font-variant-numeric:tabular-nums;overflow-wrap:anywhere;display:block}.metric .hint{font-size:.67rem;color:#92a2af;display:block;margin-top:7px;line-height:1.4}
+    .sectionbar{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:18px 20px 0}.sectionbar h2{font-size:1.04rem;margin:0;color:#203349;letter-spacing:-.028em}.sectionbar p{font-size:.77rem;color:#8193a6;margin:5px 0 0}.tag{display:inline-block;padding:7px 10px;border-radius:30px;background:#edf7f7;color:#0d8380;font-weight:700;font-size:.72rem}
+    .table-wrap{overflow-x:auto;padding:10px 16px 14px}table{width:100%;border-collapse:collapse;white-space:nowrap;font-size:.78rem;text-align:left}th{color:#778a9e;font-weight:750;background:#f7f9fc;font-size:.72rem;padding:12px 11px}td{padding:13px 11px;border-bottom:1px solid #ecf1f5;color:#38516d;font-variant-numeric:tabular-nums}tr:last-child td{border:0}.empty{text-align:center;padding:25px;color:#93a2af}
+    .info-card{padding:18px 20px}.info-card h2{margin:0 0 9px;font-size:1.04rem}.info-card p{font-size:.79rem;color:#61788e;line-height:1.58;margin:7px 0}.info-card strong{color:#2d4862}
+    .notice{display:flex;align-items:flex-start;gap:11px;padding:15px 17px;border:1px solid #cde8e4;border-radius:12px;background:#effaf7;color:#315d63;font-size:.79rem;line-height:1.55}.notice svg{flex:none;margin-top:2px}.notice strong{color:#156b70}
+    .bottom{font-size:.72rem;color:#8192a2;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-top:20px}
+    @media(max-width:1060px){.dashboard{grid-template-columns:255px minmax(0,1fr)}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}#map{height:450px}}
+    @media(max-width:760px){.top-inner{padding:13px 16px}.container{padding:20px 13px 30px}.heading-line{flex-direction:column;gap:12px}.dashboard{grid-template-columns:1fr}.sidebar{order:1}.workarea{order:2}#map{height:420px}.top-meta .extra{display:none}}
+    @media(max-width:520px){.top-meta{font-size:.7rem}.top-meta .divider{display:none}.heading-line{margin-bottom:18px}h1{font-size:1.55rem}.lead{font-size:.83rem}.map-header{padding:13px 14px}.map-header h2{font-size:.93rem}.map-tools{width:100%}.mini-btn{flex:1}.map-marker{top:10px;right:10px;font-size:.59rem}#map{height:365px}.stats{gap:8px}.metric{padding:13px}.metric strong{font-size:1.04rem}.metric .hint{font-size:.63rem}.map-footer{padding:11px 13px}.sidebar{padding:20px 17px}}
+    @media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;scroll-behavior:auto!important}}
   </style>
 </head>
 <body>
-  <header><h1>📍 GeoTrack</h1><p>Live Location & GIS Movement Tracker — student demonstration</p></header>
-  <main>
-    <div class="notice"><strong>Consent & privacy:</strong> This site accesses <em>only this device's</em> location, after you press <strong>Start GPS</strong> and approve the browser request. Tracking stops when you press Stop or leave the page. No coordinates are uploaded to our own server. Maps require internet; the map provider can see map-tile requests. <strong>Demo Mode is simulated, not real GPS.</strong></div>
-    <div class="tool" aria-label="Tracking controls">
-      <button id="start" class="btn">▶ Start GPS</button>
-      <button id="stop" class="btn secondary" disabled>■ Stop</button>
-      <button id="demo" class="btn warn">▶ Demo Mode</button>
-      <button id="reset" class="btn outline">↻ Reset</button>
-      <button id="csv" class="btn outline" disabled>↓ Export CSV</button>
-      <button id="geojson" class="btn outline" disabled>↓ Export GeoJSON</button>
-      <div class="status"><span id="dot" class="dot"></span><span id="status" role="status" aria-live="polite">Not tracking</span></div>
+  <header class="topbar"><div class="top-inner">
+    <div class="brand"><span class="logo" aria-hidden="true"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.7"/></svg></span><div><div class="brandname">Geo<span>Track</span></div><div class="brand-sub">GIS Location Intelligence</div></div></div>
+    <div class="top-meta"><span class="extra">WEB APPLICATION</span><span class="divider"></span><span>Academic prototype</span><span class="avatar" aria-hidden="true">GT</span></div>
+  </div></header>
+  <main class="container">
+    <div class="heading-line"><div><p class="eyebrow">Spatial operations dashboard</p><h1>Location tracking & movement analysis</h1><p class="lead">Real-time device positioning, interactive mapping and geospatial data export in one workspace.</p></div><div class="status-wrap" role="status" aria-live="polite"><span class="state-dot" id="statusdot"></span><span id="status">Ready — not tracking</span></div></div>
+    <div class="dashboard">
+      <aside class="sidebar" aria-label="Tracking control panel">
+        <h2>Tracking controls</h2><p class="intro">Operate location tracking for this device only. Location permission is always required.</p>
+        <div class="overline">Device positioning</div>
+        <div class="actionstack"><button id="once" class="btn primary">◎ &nbsp;Locate me once</button><div class="twocol"><button id="start" class="btn secondary">▶ Start live</button><button id="stop" class="btn danger" disabled>■ Stop</button></div></div>
+        <div class="slideline"></div>
+        <p class="overline">Session management</p>
+        <div class="twocol"><button id="demo" class="btn secondary">▶ Demo route</button><button id="reset" class="btn secondary">↻ Reset</button></div>
+        <div class="slideline"></div>
+        <p class="overline">Map configuration</p>
+        <label class="option" for="follow"><span>Follow current location</span><span class="switch"><input id="follow" type="checkbox" checked><i class="slider" aria-hidden="true"></i></span></label>
+        <label class="option" for="accuracyToggle"><span>Show accuracy radius</span><span class="switch"><input id="accuracyToggle" type="checkbox" checked><i class="slider" aria-hidden="true"></i></span></label>
+        <label class="option" for="fenceToggle"><span>Enable geofence</span><span class="switch"><input id="fenceToggle" type="checkbox" checked><i class="slider" aria-hidden="true"></i></span></label>
+        <label class="option" for="radius"><span>Geofence size</span><select class="radius" id="radius"><option value="50">50 m</option><option value="100" selected>100 m</option><option value="200">200 m</option><option value="500">500 m</option></select></label>
+        <div id="geostatus" class="geostatus">Geofence: waiting for a first position.</div>
+        <div class="slideline"></div>
+        <p class="overline">Download & export</p>
+        <div class="twocol"><button id="csv" class="btn secondary" disabled>↓ CSV</button><button id="geojson" class="btn secondary" disabled>↓ GeoJSON</button></div>
+        <p class="disclaimer-side" style="margin-top:14px">Export is manual. Position records stay in browser memory until reset or page close.</p>
+      </aside>
+      <div class="workarea">
+        <section class="map-card" aria-label="Interactive GIS mapping panel">
+          <div class="map-header"><div><h2>Live geospatial map</h2><p>Explore positions, recorded routes and proximity zones</p></div><div class="map-tools"><button id="recenter" class="mini-btn">◎ Recenter</button><button id="fitroute" class="mini-btn">⤢ Fit route</button><button id="copycoords" class="mini-btn" disabled>Copy coordinates</button></div></div>
+          <div class="map-frame"><div id="map" role="region" aria-label="Interactive GIS map"></div><div class="map-marker"><span class="signal"></span>OpenStreetMap</div></div>
+          <div class="map-footer"><div class="legend"><span class="legenditem"><i class="dot"></i>Position</span><span class="legenditem"><i class="linekey"></i>Route</span><span class="legenditem"><i class="fencekey"></i>Geofence</span></div><div>Coordinates · WGS84 (EPSG:4326)</div></div>
+        </section>
+        <section class="stats" aria-label="Session statistics">
+          <div class="metric"><span class="label">LATITUDE</span><strong id="lat">—</strong><span class="hint">Decimal degrees</span></div>
+          <div class="metric"><span class="label">LONGITUDE</span><strong id="lng">—</strong><span class="hint">Decimal degrees</span></div>
+          <div class="metric"><span class="label">POSITION ACCURACY</span><strong id="accuracy">—</strong><span class="hint" id="quality">Waiting for location</span></div>
+          <div class="metric"><span class="label">ROUTE DISTANCE</span><strong id="distance">0 m</strong><span class="hint">Estimated · jitter filtered</span></div>
+          <div class="metric"><span class="label">LOCATION UPDATES</span><strong id="fixes">0</strong><span class="hint">Reported by the browser</span></div>
+          <div class="metric"><span class="label">ROUTE POINTS</span><strong id="points">0</strong><span class="hint">Accepted movement points</span></div>
+          <div class="metric"><span class="label">SESSION DURATION</span><strong id="elapsed">00:00</strong><span class="hint">Active session elapsed</span></div>
+          <div class="metric"><span class="label">LATEST UPDATE</span><strong id="updated">—</strong><span class="hint" id="method">Source: —</span></div>
+        </section>
+        <section class="table-card" aria-label="Position history"><div class="sectionbar"><div><h2>Recent location records</h2><p>Most recent five position fixes</p></div><span id="tableTag" class="tag">No records yet</span></div><div class="table-wrap"><table><thead><tr><th>Time</th><th>Latitude</th><th>Longitude</th><th>Accuracy</th><th>Source</th></tr></thead><tbody id="history"><tr><td class="empty" colspan="5">Use Locate Once, Start Live or Demo Route to view location history.</td></tr></tbody></table></div></section>
+        <section class="notice" aria-label="Privacy information"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#118d88" stroke-width="1.8" stroke-linejoin="round"><path d="m12 2 8 4v5c0 5-3.5 8.5-8 11-4.5-2.5-8-6-8-11V6l8-4Z"/><path d="m9 12 2 2 4-4"/></svg><div><strong>Permission-based location access.</strong> The browser requests your consent before reading device location. GeoTrack does not upload coordinates to its own server. Map tiles are requested from an external provider, which can see the area being viewed. <strong>Demo Route is simulated, not live GPS.</strong></div></section>
+        <section class="info-card"><h2>About the system</h2><p><strong>Positioning:</strong> The browser Geolocation API may use GPS, Wi-Fi or cellular positioning. Continuous tracking is designed for an open, foreground tab and requires HTTPS and permission.</p><p><strong>GIS processing:</strong> Leaflet displays position markers, movement paths, an estimated accuracy radius and a configurable geofence. Distance uses the Haversine formula with basic jitter filtering. Accuracy and geofence assessment are estimates, not guarantees.</p><p><strong>Data:</strong> Export positions to CSV or GeoJSON for analysis in QGIS. No user account, remote tracking, or background tracking is provided by this prototype.</p></section>
+      </div>
     </div>
-    <div class="mapframe"><div id="map" role="region" aria-label="Interactive tracking map"></div><div class="mapnote">Blue marker = latest position • Shaded circle = reported accuracy radius • Blue path = movement route • Map data © OpenStreetMap contributors</div></div>
-    <section class="stats" aria-label="Live location statistics">
-      <div class="card"><span>Latitude</span><strong id="lat">—</strong></div>
-      <div class="card"><span>Longitude</span><strong id="lng">—</strong></div>
-      <div class="card"><span>Estimated accuracy</span><strong id="accuracy">—</strong></div>
-      <div class="card"><span>Route distance (approx.)</span><strong id="distance">0 m</strong></div>
-      <div class="card"><span>Accepted route points</span><strong id="points">0</strong></div>
-      <div class="card"><span>Last update</span><strong id="updated">—</strong></div>
-    </section>
-    <section class="info">
-      <h2>How it works</h2>
-      <p>The browser's Geolocation API receives location fixes from available device services (GPS, Wi‑Fi, or cellular positioning depending on device/browser). JavaScript updates an interactive Leaflet map, the most recent location marker, its approximate accuracy circle, and a route polyline. The route distance is computed using the Haversine formula and filters out small location fluctuations; it is an estimate, not a surveyed distance.</p>
-      <p><strong>GIS features:</strong> interactive pan/zoom, spatial points, polyline route, radius buffer, distance analysis, CSV export and GeoJSON export. Coordinates stay in this open page's memory until Reset/Close; export happens only when you click it.</p>
-    </section>
+    <div class="bottom"><span>© GeoTrack · Student GIS demonstration</span><span>HTTPS needed for online geolocation · Consent-based tracking</span></div>
   </main>
-  <footer>GeoTrack • Educational prototype • Test with consent • Do not use to locate someone without their knowledge</footer>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script>
-    'use strict';
-    const el = id => document.getElementById(id);
-    const map = L.map('map').setView([-0.607,30.655], 13); // Initial view: Mbarara, Uganda (not user's location).
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom:19, attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors'
-    }).addTo(map);
-    const routeLine = L.polyline([], {color:'#176cc4',weight:5,opacity:0.85}).addTo(map);
-    let marker=null, accuracyCircle=null, watchId=null, timer=null, mode='idle';
-    let fixes=[], route=[], totalMeters=0, demoIndex=0;
-
-    function setStatus(message, kind='idle') {
-      el('status').textContent=message;
-      el('dot').className='dot'+(kind==='gps'?' live':kind==='demo'?' demo':'');
+'use strict';
+    const el=id=>document.getElementById(id);
+    const map=L.map('map').setView([-0.607,30.655],13); // Initial location is a public map view, not the user's actual position.
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors'}).addTo(map);
+    const track=L.polyline([],{color:'#1c78d0',weight:5,opacity:.88}).addTo(map);
+    let marker=null, accuracyLayer=null, fenceLayer=null, fenceCentre=null;
+    let fixes=[],route=[],meters=0,watchId=null,demoTimer=null,clockTimer=null,sessionStart=null,mode='idle',demoIndex=0,requestToken=0;
+    let lastFix=null;
+    function status(message,kind='idle'){el('status').textContent=message;el('statusdot').className='state-dot'+(kind==='gps'?' live':kind==='demo'?' demo':'');}
+    function buttons(){const busy=mode!=='idle';el('once').disabled=busy;el('start').disabled=busy;el('demo').disabled=busy;el('stop').disabled=!busy;el('csv').disabled=!fixes.length;el('geojson').disabled=!fixes.length;}
+    function haversine(a,b){const r=Math.PI/180,x=(b.lat-a.lat)*r,y=(b.lng-a.lng)*r,h=Math.sin(x/2)**2+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(y/2)**2;return 12742000*Math.asin(Math.min(1,Math.sqrt(h)));}
+    function formatMeters(m){return m<1000?`${Math.round(m)} m`:`${(m/1000).toFixed(2)} km`;}
+    function clock(){if(!sessionStart)return;const s=Math.floor((Date.now()-sessionStart)/1000);el('elapsed').textContent=`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;}
+    function startClock(){sessionStart=Date.now();clock();if(clockTimer!==null)clearInterval(clockTimer);clockTimer=setInterval(clock,1000);}
+    function stopClock(){if(clockTimer!==null){clearInterval(clockTimer);clockTimer=null;}clock();}
+    function showAccuracy(){if(!lastFix||lastFix.accuracy===null||!el('accuracyToggle').checked){if(accuracyLayer){map.removeLayer(accuracyLayer);accuracyLayer=null;}return;}
+      const pos=[lastFix.lat,lastFix.lng],rad=lastFix.accuracy;
+      if(!accuracyLayer)accuracyLayer=L.circle(pos,{radius:rad,color:'#2385dd',weight:1,fillColor:'#77baf5',fillOpacity:.16}).addTo(map);
+      else accuracyLayer.setLatLng(pos).setRadius(rad);
     }
-    function updateButtons(){
-      el('start').disabled=mode!=='idle'; el('demo').disabled=mode!=='idle';
-      el('stop').disabled=mode==='idle';
-      el('csv').disabled=fixes.length===0; el('geojson').disabled=fixes.length===0;
+    function geofence(){const radius=Number(el('radius').value);if(!fenceCentre){el('geostatus').textContent='Geofence: waiting for a first position.';return;}
+      if(!el('fenceToggle').checked){if(fenceLayer){map.removeLayer(fenceLayer);fenceLayer=null;}el('geostatus').textContent='Geofence hidden.';return;}
+      const center=[fenceCentre.lat,fenceCentre.lng];
+      if(!fenceLayer)fenceLayer=L.circle(center,{radius,color:'#d47a1d',weight:2,dashArray:'6 6',fillColor:'#eda84d',fillOpacity:.065}).addTo(map);
+      else fenceLayer.setLatLng(center).setRadius(radius);
+      if(!lastFix){el('geostatus').textContent='Geofence: waiting for position.';return;}
+      const gap=haversine(lastFix,fenceCentre);const uncertainty=(lastFix.accuracy??Infinity)+(fenceCentre.accuracy??Infinity);
+      if(gap+uncertainty<=radius)el('geostatus').textContent=`Geofence: inside ${radius} m zone (estimated).`;
+      else if(gap-uncertainty>radius)el('geostatus').textContent=`Geofence: outside ${radius} m zone (estimated).`;
+      else el('geostatus').textContent=`Geofence: boundary uncertain (${Math.round(gap)} m from start; location accuracy limits judgement).`;
     }
-    function haversine(a,b){
-      const R=6371000, rad=Math.PI/180;
-      const dLat=(b.lat-a.lat)*rad, dLon=(b.lng-a.lng)*rad;
-      const h=Math.sin(dLat/2)**2+Math.cos(a.lat*rad)*Math.cos(b.lat*rad)*Math.sin(dLon/2)**2;
-      return 2*R*Math.asin(Math.min(1,Math.sqrt(h)));
-    }
+    function updateHistory(){el('tableTag').textContent=`${fixes.length} location update${fixes.length===1?'':'s'}`;
+      el('history').innerHTML=fixes.slice(-5).reverse().map(p=>`<tr><td>${new Date(p.time).toLocaleTimeString()}</td><td>${p.lat.toFixed(6)}</td><td>${p.lng.toFixed(6)}</td><td>${p.accuracy===null?'Unknown':'±'+Math.round(p.accuracy)+' m'}</td><td>${p.source==='DEMO'?'Simulated':'Device'}</td></tr>`).join('');}
     function addFix(lat,lng,accuracy,source,time=Date.now()){
-      if(!Number.isFinite(lat)||!Number.isFinite(lng))return;
-      const point={lat,lng,accuracy:Number.isFinite(accuracy)?Math.max(0,accuracy):null,source,time};
-      fixes.push(point);
-      const loc=[lat,lng];
-      if(!marker)marker=L.circleMarker(loc,{radius:9,color:'#fff',weight:3,fillColor:'#1468c9',fillOpacity:1}).addTo(map);
-      else marker.setLatLng(loc);
-      marker.bindPopup(`${source==='DEMO'?'SIMULATED':'GPS/browser'} location<br>${lat.toFixed(6)}, ${lng.toFixed(6)}`);
-      if(point.accuracy!==null){
-        if(!accuracyCircle)accuracyCircle=L.circle(loc,{radius:point.accuracy,color:'#2581d3',weight:1,fillColor:'#48a5ff',fillOpacity:.12}).addTo(map);
-        else accuracyCircle.setLatLng(loc).setRadius(point.accuracy);
-      } else if(accuracyCircle){map.removeLayer(accuracyCircle);accuracyCircle=null;}
-      const prev=route[route.length-1];
-      // Jitter filter: accept first fix and significant movements only.
-      const threshold=Math.max(7,Math.min((point.accuracy??15)*0.4,25));
-      if(!prev || haversine(prev,point)>=threshold){
-        if(prev)totalMeters+=haversine(prev,point);
-        route.push(point);routeLine.addLatLng(loc);
+      if(!Number.isFinite(lat)||!Number.isFinite(lng)||Math.abs(lat)>90||Math.abs(lng)>180)return;
+      const p={lat,lng,accuracy:Number.isFinite(accuracy)?Math.max(0,accuracy):null,source,time};fixes.push(p);lastFix=p;
+      const pos=[lat,lng];if(!marker)marker=L.circleMarker(pos,{radius:9,color:'#fff',weight:3,fillColor:'#1473d1',fillOpacity:1}).addTo(map);else marker.setLatLng(pos);
+      marker.bindPopup(`${source==='DEMO'?'Simulated position':'Device-reported position'}<br>${lat.toFixed(6)}, ${lng.toFixed(6)}`);
+      if(!fenceCentre)fenceCentre=p;
+      const prev=route[route.length-1];const tooInaccurate=source!=='DEMO'&&p.accuracy!==null&&p.accuracy>100;
+      const minMovement=Math.max(7,Math.min((p.accuracy??15)*0.5,25));
+      if(!tooInaccurate&&(!prev||haversine(prev,p)>=minMovement)){
+        // Guard against clearly implausible jumps (e.g. a noisy browser fix across town).
+        const dist=prev?haversine(prev,p):0;const seconds=prev?(p.time-prev.time)/1000:0;
+        const plausible=source==='DEMO'||!prev||seconds<=0||dist/seconds<=55;
+        if(plausible){if(prev)meters+=dist;route.push(p);track.addLatLng(pos);}
       }
-      map.setView(loc, Math.max(map.getZoom(),16),{animate:true});
+      if(el('follow').checked)map.setView(pos,Math.max(map.getZoom(),16),{animate:false});
+      showAccuracy();geofence();
       el('lat').textContent=lat.toFixed(6);el('lng').textContent=lng.toFixed(6);
-      el('accuracy').textContent=point.accuracy===null?'Unknown':`± ${Math.round(point.accuracy)} m`;
-      el('distance').textContent=totalMeters<1000?`${Math.round(totalMeters)} m`:`${(totalMeters/1000).toFixed(2)} km`;
-      el('points').textContent=String(route.length);
-      el('updated').textContent=new Date(time).toLocaleTimeString();
-      updateButtons();
+      el('accuracy').textContent=p.accuracy===null?'Unknown':`± ${Math.round(p.accuracy)} m`;
+      el('quality').textContent=source==='DEMO'?'SIMULATED, not real GPS':p.accuracy===null?'No accuracy estimate':p.accuracy<=20?'Good reported precision':p.accuracy<=100?'Moderate reported precision':'Low reported precision — route point skipped';
+      el('distance').textContent=formatMeters(meters);el('fixes').textContent=fixes.length;el('points').textContent=route.length;
+      el('updated').textContent=new Date(time).toLocaleTimeString();el('method').textContent=source==='DEMO'?'Source: simulation':'Source: device positioning (GPS/Wi-Fi/cellular)';
+      updateHistory();buttons();
     }
-    function stopTracking(){
-      if(watchId!==null){navigator.geolocation.clearWatch(watchId);watchId=null;}
-      if(timer!==null){clearInterval(timer);timer=null;}
-      mode='idle';setStatus('Stopped');updateButtons();
+    function stop(){++requestToken;if(watchId!==null){navigator.geolocation.clearWatch(watchId);watchId=null;}if(demoTimer!==null){clearInterval(demoTimer);demoTimer=null;}stopClock();mode='idle';status('Stopped');buttons();}
+    function reset(){stop();fixes=[];route=[];meters=0;demoIndex=0;fenceCentre=null;lastFix=null;sessionStart=null;track.setLatLngs([]);
+      for(const layer of [marker,accuracyLayer,fenceLayer])if(layer)map.removeLayer(layer);marker=null;accuracyLayer=null;fenceLayer=null;
+      for(const id of ['lat','lng','accuracy','updated'])el(id).textContent='—';el('quality').textContent='Waiting for location';el('distance').textContent='0 m';el('fixes').textContent='0';el('points').textContent='0';el('elapsed').textContent='00:00';el('method').textContent='Source: —';el('tableTag').textContent='No records yet';el('history').innerHTML='<tr><td colspan="5" class="empty">Use Locate Once, Start Live or Demo Mode to see location records.</td></tr>';geofence();status('Ready — not tracking');buttons();}
+    function newSession(){if(!fixes.length)return true;if(!confirm('A new session will clear your existing points. Export them first if you need to keep them. Continue?'))return false;reset();return true;}
+    function locationError(err){return err.code===1?'Location permission denied. Enable it in browser settings.':err.code===2?'Device location unavailable. Check Location Services.':'Location request timed out. Try again.';}
+    function locateOnce(){if(!navigator.geolocation){status('Geolocation not supported');return;}if(!window.isSecureContext){status('Open the HTTPS published site for GPS.');return;}if(!newSession())return;
+      mode='once';const token=++requestToken;startClock();status('Requesting one device location…');buttons();
+      navigator.geolocation.getCurrentPosition(p=>{if(mode!=='once'||token!==requestToken)return;addFix(p.coords.latitude,p.coords.longitude,p.coords.accuracy,'DEVICE',p.timestamp);stopClock();mode='idle';status('Single location received (not tracking)','gps');buttons();},err=>{if(mode!=='once'||token!==requestToken)return;stopClock();mode='idle';status(locationError(err));buttons();},{enableHighAccuracy:true,maximumAge:0,timeout:30000});
     }
-    function startGPS(){
-      if(!navigator.geolocation){setStatus('Geolocation not supported');return;}
-      if(fixes.length){if(!confirm('Start a new session and clear current points? Export them first if needed.'))return;reset();}
-      mode='gps';setStatus('Waiting for location permission/GPS…');updateButtons();
-      watchId=navigator.geolocation.watchPosition(
-        p=>{
-          if(mode!=='gps')return;
-          addFix(p.coords.latitude,p.coords.longitude,p.coords.accuracy,'GPS',p.timestamp);
-          setStatus('Live GPS / device positioning','gps');
-        },
-        err=>{
-          if(mode!=='gps')return;
-          const msg=err.code===1?'Permission denied. Allow location in browser settings.':err.code===2?'Location unavailable. Try outdoors.':'Location request timed out. Try again.';
-          stopTracking();setStatus(msg);
-        },
-        {enableHighAccuracy:true,maximumAge:0,timeout:25000}
-      );
+    function startLive(){if(!navigator.geolocation){status('Geolocation not supported');return;}if(!window.isSecureContext){status('Open the HTTPS published site for GPS.');return;}if(!newSession())return;
+      mode='gps';const token=++requestToken;startClock();status('Waiting for permission / device location…');buttons();
+      watchId=navigator.geolocation.watchPosition(p=>{if(mode!=='gps'||token!==requestToken)return;addFix(p.coords.latitude,p.coords.longitude,p.coords.accuracy,'DEVICE',p.timestamp);status('Live — device positioning active','gps');},err=>{if(mode!=='gps'||token!==requestToken)return;stop();status(locationError(err));},{enableHighAccuracy:true,maximumAge:0,timeout:30000});
     }
-    function startDemo(){
-      if(fixes.length){if(!confirm('Start a new session and clear current points? Export them first if needed.'))return;reset();}
-      mode='demo'; demoIndex=0;setStatus('SIMULATED route — not real GPS','demo');updateButtons();
-      // Reproducible illustrative loop near Mbarara; never shown as actual user's location.
+    function startDemo(){if(!newSession())return;mode='demo';++requestToken;demoIndex=0;startClock();status('SIMULATED route — not GPS','demo');buttons();
       const path=[[-0.6070,30.6550],[-0.6068,30.6552],[-0.6066,30.6554],[-0.6064,30.6557],[-0.6062,30.6559],[-0.6060,30.6562],[-0.6058,30.6565],[-0.6056,30.6568],[-0.6054,30.6570]];
-      const step=()=>{
-        if(demoIndex>=path.length){stopTracking();setStatus('Simulation finished (not real GPS)');return;}
-        const [lat,lng]=path[demoIndex++];addFix(lat,lng,8,'DEMO');
-      };
-      step();timer=setInterval(step,1800);
+      const step=()=>{if(demoIndex>=path.length){stop();status('Simulation finished (not real GPS)');return;}const [lat,lng]=path[demoIndex++];addFix(lat,lng,8,'DEMO');};step();demoTimer=setInterval(step,1100);
     }
-    function reset(){
-      stopTracking();fixes=[];route=[];totalMeters=0;demoIndex=0;
-      routeLine.setLatLngs([]);
-      if(marker){map.removeLayer(marker);marker=null;}
-      if(accuracyCircle){map.removeLayer(accuracyCircle);accuracyCircle=null;}
-      ['lat','lng','accuracy','updated'].forEach(id=>el(id).textContent='—');
-      el('distance').textContent='0 m';el('points').textContent='0';setStatus('Not tracking');updateButtons();
-    }
-    function download(name,mime,contents){
-      const blob=new Blob([contents],{type:mime}),url=URL.createObjectURL(blob),a=document.createElement('a');
-      a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
-    }
-    function exportCSV(){
-      const rows=['timestamp_utc,latitude,longitude,accuracy_m,source',...fixes.map(p=>`${new Date(p.time).toISOString()},${p.lat},${p.lng},${p.accuracy??''},${p.source}`)];
-      download('geotrack_positions.csv','text/csv;charset=utf-8',rows.join('\n'));
-    }
-    function exportGeoJSON(){
-      const features=[...fixes.map(p=>({type:'Feature',geometry:{type:'Point',coordinates:[p.lng,p.lat]},properties:{timestamp:new Date(p.time).toISOString(),accuracy_m:p.accuracy,source:p.source}}))];
-      if(route.length>1)features.push({type:'Feature',geometry:{type:'LineString',coordinates:route.map(p=>[p.lng,p.lat])},properties:{kind:'filtered-route',distance_m:Math.round(totalMeters)}});
-      download('geotrack_route.geojson','application/geo+json',JSON.stringify({type:'FeatureCollection',features},null,2));
-    }
-    el('start').addEventListener('click',startGPS);el('stop').addEventListener('click',stopTracking);
-    el('demo').addEventListener('click',startDemo);el('reset').addEventListener('click',reset);
-    el('csv').addEventListener('click',exportCSV);el('geojson').addEventListener('click',exportGeoJSON);
-    document.addEventListener('visibilitychange',()=>{if(document.hidden && mode!=='idle')stopTracking();});
-    updateButtons();
+    function download(name,mime,data){const blob=new Blob([data],{type:mime});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);}
+    function exportCSV(){if(!fixes.length)return;const rows=['timestamp_utc,latitude,longitude,accuracy_m,source',...fixes.map(p=>`${new Date(p.time).toISOString()},${p.lat},${p.lng},${p.accuracy??''},${p.source}`)];download('geotrack_positions.csv','text/csv;charset=utf-8',rows.join('\n'));}
+    function exportGeoJSON(){if(!fixes.length)return;const features=fixes.map(p=>({type:'Feature',geometry:{type:'Point',coordinates:[p.lng,p.lat]},properties:{timestamp:new Date(p.time).toISOString(),accuracy_m:p.accuracy,source:p.source}}));if(route.length>1)features.push({type:'Feature',geometry:{type:'LineString',coordinates:route.map(p=>[p.lng,p.lat])},properties:{distance_m:Math.round(meters),kind:'filtered-route',source:route[0].source}});if(fenceCentre&&el('fenceToggle').checked)features.push({type:'Feature',geometry:{type:'Point',coordinates:[fenceCentre.lng,fenceCentre.lat]},properties:{kind:'geofence-centre',radius_m:Number(el('radius').value)}});download('geotrack_route.geojson','application/geo+json',JSON.stringify({type:'FeatureCollection',features},null,2));}
+    el('once').addEventListener('click',locateOnce);el('start').addEventListener('click',startLive);el('stop').addEventListener('click',stop);el('demo').addEventListener('click',startDemo);el('reset').addEventListener('click',reset);el('csv').addEventListener('click',exportCSV);el('geojson').addEventListener('click',exportGeoJSON);
+    el('accuracyToggle').addEventListener('change',showAccuracy);el('fenceToggle').addEventListener('change',geofence);el('radius').addEventListener('change',geofence);
+    // Browsers restrict background geolocation. Explicitly stop on hiding this tab to avoid claiming background tracking.
+    document.addEventListener('visibilitychange',()=>{if(document.hidden&&mode!=='idle')stop();});
+    window.addEventListener('pagehide',()=>{if(mode!=='idle')stop();});buttons();
+    // Convenience tools; no external transmission of location data.
+    el('recenter').addEventListener('click',()=>{if(lastFix){map.setView([lastFix.lat,lastFix.lng],Math.max(map.getZoom(),16));}else{map.setView([-0.607,30.655],13);}});
+    el('fitroute').addEventListener('click',()=>{if(route.length>1){map.fitBounds(track.getBounds(),{padding:[35,35],maxZoom:18});}else if(lastFix){map.setView([lastFix.lat,lastFix.lng],16);}else{map.setView([-0.607,30.655],13);}});
+    el('copycoords').addEventListener('click',async()=>{
+      if(!lastFix)return;
+      const coords=`${lastFix.lat.toFixed(6)}, ${lastFix.lng.toFixed(6)}`;
+      try{await navigator.clipboard.writeText(coords);el('copycoords').textContent='✓ Copied';setTimeout(()=>el('copycoords').textContent='Copy coordinates',1800);}
+      catch(e){window.prompt('Copy these coordinates:',coords);}
+    });
+    const oldButtons=buttons;
+    buttons=function(){oldButtons();el('copycoords').disabled=!lastFix;el('recenter').disabled=false;el('fitroute').disabled=false;};
+    buttons();
+
   </script>
 </body>
 </html>
