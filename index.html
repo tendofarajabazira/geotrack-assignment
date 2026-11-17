@@ -78,6 +78,8 @@
         <label class="option" for="accuracyToggle"><span>Show accuracy radius</span><span class="switch"><input id="accuracyToggle" type="checkbox" checked><i class="slider" aria-hidden="true"></i></span></label>
         <label class="option" for="fenceToggle"><span>Enable geofence</span><span class="switch"><input id="fenceToggle" type="checkbox" checked><i class="slider" aria-hidden="true"></i></span></label>
         <label class="option" for="radius"><span>Geofence size</span><select class="radius" id="radius"><option value="50">50 m</option><option value="100" selected>100 m</option><option value="200">200 m</option><option value="500">500 m</option></select></label>
+        <button id="setFence" class="btn secondary" type="button" aria-pressed="false">⌖ Select geofence centre on map</button>
+        <p class="disclaimer-side" style="margin-top:8px">Optional: click this button, then click the map to choose a fixed monitoring centre. Otherwise the first position is used.</p>
         <div id="geostatus" class="geostatus">Geofence: waiting for a first position.</div>
         <div class="slideline"></div>
         <p class="overline">Download & export</p>
@@ -102,7 +104,7 @@
         </section>
         <section class="table-card" aria-label="Position history"><div class="sectionbar"><div><h2>Recent location records</h2><p>Most recent five position fixes</p></div><span id="tableTag" class="tag">No records yet</span></div><div class="table-wrap"><table><thead><tr><th>Time</th><th>Latitude</th><th>Longitude</th><th>Accuracy</th><th>Source</th></tr></thead><tbody id="history"><tr><td class="empty" colspan="5">Use Locate Once, Start Live or Demo Route to view location history.</td></tr></tbody></table></div></section>
         <section class="notice" aria-label="Privacy information"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#118d88" stroke-width="1.8" stroke-linejoin="round"><path d="m12 2 8 4v5c0 5-3.5 8.5-8 11-4.5-2.5-8-6-8-11V6l8-4Z"/><path d="m9 12 2 2 4-4"/></svg><div><strong>Permission-based location access.</strong> The browser requests your consent before reading device location. GeoTrack does not upload coordinates to its own server. Map tiles are requested from an external provider, which can see the area being viewed. <strong>Demo Route is simulated, not live GPS.</strong></div></section>
-        <section class="info-card"><h2>About the system</h2><p><strong>Positioning:</strong> The browser Geolocation API may use GPS, Wi-Fi or cellular positioning. Continuous tracking is designed for an open, foreground tab and requires HTTPS and permission.</p><p><strong>GIS processing:</strong> Leaflet displays position markers, movement paths, an estimated accuracy radius and a configurable geofence. Distance uses the Haversine formula with basic jitter filtering. Accuracy and geofence assessment are estimates, not guarantees.</p><p><strong>Data:</strong> Export positions to CSV or GeoJSON for analysis in QGIS. No user account, remote tracking, or background tracking is provided by this prototype.</p></section>
+        <section class="info-card"><h2>About the system</h2><p><strong>Positioning:</strong> The browser Geolocation API may use GPS, Wi-Fi or cellular positioning. Continuous tracking is designed for an open, foreground tab and requires HTTPS and permission.</p><p><strong>GIS processing:</strong> Leaflet displays position markers, movement paths, an estimated accuracy radius and a configurable geofence. Users may place the geofence centre with a map click. Distance uses the Haversine formula with basic jitter filtering. Accuracy and geofence assessment are estimates, not guarantees.</p><p><strong>Data:</strong> Export positions to CSV or GeoJSON for analysis in QGIS. No user account, remote tracking, or background tracking is provided by this prototype.</p></section>
       </div>
     </div>
     <div class="bottom"><span>© GeoTrack · Student GIS demonstration</span><span>HTTPS needed for online geolocation · Consent-based tracking</span></div>
@@ -117,6 +119,23 @@
     let marker=null, accuracyLayer=null, fenceLayer=null, fenceCentre=null;
     let fixes=[],route=[],meters=0,watchId=null,demoTimer=null,clockTimer=null,sessionStart=null,mode='idle',demoIndex=0,requestToken=0;
     let lastFix=null;
+    let choosingFence=false;
+    function fenceSelection(active){
+      choosingFence=active;
+      el('setFence').textContent=active?'Cancel fence selection':'⌖ Select geofence centre on map';
+      el('setFence').setAttribute('aria-pressed',String(active));
+      map.getContainer().style.cursor=active?'crosshair':'';
+      if(active)el('geostatus').textContent='Click once on the map to position the monitoring zone.';
+      else geofence();
+    }
+    map.on('click',event=>{
+      if(!choosingFence)return;
+      fenceCentre={lat:event.latlng.lat,lng:event.latlng.lng,accuracy:0};
+      el('fenceToggle').checked=true;
+      fenceSelection(false);
+      geofence();
+    });
+    el('setFence').addEventListener('click',()=>fenceSelection(!choosingFence));
     function status(message,kind='idle'){el('status').textContent=message;el('statusdot').className='state-dot'+(kind==='gps'?' live':kind==='demo'?' demo':'');}
     function buttons(){const busy=mode!=='idle';el('once').disabled=busy;el('start').disabled=busy;el('demo').disabled=busy;el('stop').disabled=!busy;el('csv').disabled=!fixes.length;el('geojson').disabled=!fixes.length;}
     function haversine(a,b){const r=Math.PI/180,x=(b.lat-a.lat)*r,y=(b.lng-a.lng)*r,h=Math.sin(x/2)**2+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(y/2)**2;return 12742000*Math.asin(Math.min(1,Math.sqrt(h)));}
@@ -166,7 +185,7 @@
       updateHistory();buttons();
     }
     function stop(){++requestToken;if(watchId!==null){navigator.geolocation.clearWatch(watchId);watchId=null;}if(demoTimer!==null){clearInterval(demoTimer);demoTimer=null;}stopClock();mode='idle';status('Stopped');buttons();}
-    function reset(){stop();fixes=[];route=[];meters=0;demoIndex=0;fenceCentre=null;lastFix=null;sessionStart=null;track.setLatLngs([]);
+    function reset(){stop();fenceSelection(false);fixes=[];route=[];meters=0;demoIndex=0;fenceCentre=null;lastFix=null;sessionStart=null;track.setLatLngs([]);
       for(const layer of [marker,accuracyLayer,fenceLayer])if(layer)map.removeLayer(layer);marker=null;accuracyLayer=null;fenceLayer=null;
       for(const id of ['lat','lng','accuracy','updated'])el(id).textContent='—';el('quality').textContent='Waiting for location';el('distance').textContent='0 m';el('fixes').textContent='0';el('points').textContent='0';el('elapsed').textContent='00:00';el('method').textContent='Source: —';el('tableTag').textContent='No records yet';el('history').innerHTML='<tr><td colspan="5" class="empty">Use Locate Once, Start Live or Demo Mode to see location records.</td></tr>';geofence();status('Ready — not tracking');buttons();}
     function newSession(){if(!fixes.length)return true;if(!confirm('A new session will clear your existing points. Export them first if you need to keep them. Continue?'))return false;reset();return true;}
