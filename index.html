@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#102442">
+  <meta name="description" content="Consent-based live location tracking educational demo using browser geolocation and Leaflet GIS maps.">
+  <title>GeoTrack | Live Location GIS Demo</title>
+  <!-- Leaflet 1.9.4 stable: official example CDN and integrity hashes -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  <style>
+    :root {font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#14243a;background:#f3f6fb}
+    * {box-sizing:border-box} body {margin:0} button {font:inherit;cursor:pointer} button:disabled{opacity:.48;cursor:not-allowed}
+    header {background:linear-gradient(110deg,#102442,#1860a1);color:#fff;padding:23px max(18px,calc((100vw - 1180px)/2))}
+    header h1 {margin:0;font-size:clamp(1.45rem,4vw,2.1rem);letter-spacing:-.02em}
+    header p {margin:6px 0 0;color:#d6e8fb;font-size:.97rem}
+    main {max-width:1180px;margin:22px auto;padding:0 16px 26px;display:grid;gap:16px}
+    .notice {background:#eaf4ff;border:1px solid #bddcff;border-radius:13px;padding:13px 16px;line-height:1.55;font-size:.92rem}
+    .tool {display:flex;gap:9px;flex-wrap:wrap;align-items:center;background:#fff;border:1px solid #e0e7f0;padding:14px;border-radius:14px;box-shadow:0 5px 20px #11203908}
+    .btn {border:0;border-radius:9px;color:#fff;padding:11px 15px;font-weight:650;min-height:44px;background:#1670ba}
+    .btn:hover:not(:disabled){filter:brightness(.95)} .btn.secondary{background:#50667d} .btn.warn{background:#c25f22} .btn.outline{background:#fff;border:1px solid #bdcad8;color:#12314e}
+    .status {margin-left:auto;display:flex;align-items:center;gap:8px;color:#4c627c;font-weight:700;font-size:.91rem}
+    .dot {display:inline-block;height:10px;width:10px;border-radius:50%;background:#a2abb9}
+    .dot.live{background:#18a96b} .dot.demo{background:#e8a12a}
+    .mapframe {position:relative;background:#fff;border-radius:15px;overflow:hidden;border:1px solid #dfe8f1;box-shadow:0 5px 20px #1120390c}
+    #map {width:100%;height:min(58vh,520px);min-height:320px;z-index:0}
+    .mapnote {padding:9px 14px;background:#fff;font-size:.83rem;color:#54677e;border-top:1px solid #e6ebf0}
+    .stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+    .card{background:white;border:1px solid #e1e8f0;border-radius:13px;padding:15px;min-width:0}
+    .card span{display:block;font-size:.83rem;color:#60728a;margin-bottom:8px}
+    .card strong{font-size:clamp(1.04rem,3vw,1.38rem);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+    .info{background:#fff;border:1px solid #e1e8f0;border-radius:14px;padding:17px;line-height:1.57}
+    .info h2{font-size:1.15rem;margin:0 0 7px} .info p{margin:0 0 10px}
+    footer{font-size:.8rem;color:#617389;text-align:center;padding-bottom:26px}
+    @media(max-width:620px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.status{margin-left:0;width:100%;padding:5px 2px}header{padding:23px 17px}#map{height:47vh;min-height:300px}.btn{flex:1 1 140px}}
+  </style>
+</head>
+<body>
+  <header><h1>📍 GeoTrack</h1><p>Live Location & GIS Movement Tracker — student demonstration</p></header>
+  <main>
+    <div class="notice"><strong>Consent & privacy:</strong> This site accesses <em>only this device's</em> location, after you press <strong>Start GPS</strong> and approve the browser request. Tracking stops when you press Stop or leave the page. No coordinates are uploaded to our own server. Maps require internet; the map provider can see map-tile requests. <strong>Demo Mode is simulated, not real GPS.</strong></div>
+    <div class="tool" aria-label="Tracking controls">
+      <button id="start" class="btn">▶ Start GPS</button>
+      <button id="stop" class="btn secondary" disabled>■ Stop</button>
+      <button id="demo" class="btn warn">▶ Demo Mode</button>
+      <button id="reset" class="btn outline">↻ Reset</button>
+      <button id="csv" class="btn outline" disabled>↓ Export CSV</button>
+      <button id="geojson" class="btn outline" disabled>↓ Export GeoJSON</button>
+      <div class="status"><span id="dot" class="dot"></span><span id="status" role="status" aria-live="polite">Not tracking</span></div>
+    </div>
+    <div class="mapframe"><div id="map" role="region" aria-label="Interactive tracking map"></div><div class="mapnote">Blue marker = latest position • Shaded circle = reported accuracy radius • Blue path = movement route • Map data © OpenStreetMap contributors</div></div>
+    <section class="stats" aria-label="Live location statistics">
+      <div class="card"><span>Latitude</span><strong id="lat">—</strong></div>
+      <div class="card"><span>Longitude</span><strong id="lng">—</strong></div>
+      <div class="card"><span>Estimated accuracy</span><strong id="accuracy">—</strong></div>
+      <div class="card"><span>Route distance (approx.)</span><strong id="distance">0 m</strong></div>
+      <div class="card"><span>Accepted route points</span><strong id="points">0</strong></div>
+      <div class="card"><span>Last update</span><strong id="updated">—</strong></div>
+    </section>
+    <section class="info">
+      <h2>How it works</h2>
+      <p>The browser's Geolocation API receives location fixes from available device services (GPS, Wi‑Fi, or cellular positioning depending on device/browser). JavaScript updates an interactive Leaflet map, the most recent location marker, its approximate accuracy circle, and a route polyline. The route distance is computed using the Haversine formula and filters out small location fluctuations; it is an estimate, not a surveyed distance.</p>
+      <p><strong>GIS features:</strong> interactive pan/zoom, spatial points, polyline route, radius buffer, distance analysis, CSV export and GeoJSON export. Coordinates stay in this open page's memory until Reset/Close; export happens only when you click it.</p>
+    </section>
+  </main>
+  <footer>GeoTrack • Educational prototype • Test with consent • Do not use to locate someone without their knowledge</footer>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script>
+    'use strict';
+    const el = id => document.getElementById(id);
+    const map = L.map('map').setView([-0.607,30.655], 13); // Initial view: Mbarara, Uganda (not user's location).
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom:19, attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors'
+    }).addTo(map);
+    const routeLine = L.polyline([], {color:'#176cc4',weight:5,opacity:0.85}).addTo(map);
+    let marker=null, accuracyCircle=null, watchId=null, timer=null, mode='idle';
+    let fixes=[], route=[], totalMeters=0, demoIndex=0;
+
+    function setStatus(message, kind='idle') {
+      el('status').textContent=message;
+      el('dot').className='dot'+(kind==='gps'?' live':kind==='demo'?' demo':'');
+    }
+    function updateButtons(){
+      el('start').disabled=mode!=='idle'; el('demo').disabled=mode!=='idle';
+      el('stop').disabled=mode==='idle';
+      el('csv').disabled=fixes.length===0; el('geojson').disabled=fixes.length===0;
+    }
+    function haversine(a,b){
+      const R=6371000, rad=Math.PI/180;
+      const dLat=(b.lat-a.lat)*rad, dLon=(b.lng-a.lng)*rad;
+      const h=Math.sin(dLat/2)**2+Math.cos(a.lat*rad)*Math.cos(b.lat*rad)*Math.sin(dLon/2)**2;
+      return 2*R*Math.asin(Math.min(1,Math.sqrt(h)));
+    }
+    function addFix(lat,lng,accuracy,source,time=Date.now()){
+      if(!Number.isFinite(lat)||!Number.isFinite(lng))return;
+      const point={lat,lng,accuracy:Number.isFinite(accuracy)?Math.max(0,accuracy):null,source,time};
+      fixes.push(point);
+      const loc=[lat,lng];
+      if(!marker)marker=L.circleMarker(loc,{radius:9,color:'#fff',weight:3,fillColor:'#1468c9',fillOpacity:1}).addTo(map);
+      else marker.setLatLng(loc);
+      marker.bindPopup(`${source==='DEMO'?'SIMULATED':'GPS/browser'} location<br>${lat.toFixed(6)}, ${lng.toFixed(6)}`);
+      if(point.accuracy!==null){
+        if(!accuracyCircle)accuracyCircle=L.circle(loc,{radius:point.accuracy,color:'#2581d3',weight:1,fillColor:'#48a5ff',fillOpacity:.12}).addTo(map);
+        else accuracyCircle.setLatLng(loc).setRadius(point.accuracy);
+      } else if(accuracyCircle){map.removeLayer(accuracyCircle);accuracyCircle=null;}
+      const prev=route[route.length-1];
+      // Jitter filter: accept first fix and significant movements only.
+      const threshold=Math.max(7,Math.min((point.accuracy??15)*0.4,25));
+      if(!prev || haversine(prev,point)>=threshold){
+        if(prev)totalMeters+=haversine(prev,point);
+        route.push(point);routeLine.addLatLng(loc);
+      }
+      map.setView(loc, Math.max(map.getZoom(),16),{animate:true});
+      el('lat').textContent=lat.toFixed(6);el('lng').textContent=lng.toFixed(6);
+      el('accuracy').textContent=point.accuracy===null?'Unknown':`± ${Math.round(point.accuracy)} m`;
+      el('distance').textContent=totalMeters<1000?`${Math.round(totalMeters)} m`:`${(totalMeters/1000).toFixed(2)} km`;
+      el('points').textContent=String(route.length);
+      el('updated').textContent=new Date(time).toLocaleTimeString();
+      updateButtons();
+    }
+    function stopTracking(){
+      if(watchId!==null){navigator.geolocation.clearWatch(watchId);watchId=null;}
+      if(timer!==null){clearInterval(timer);timer=null;}
+      mode='idle';setStatus('Stopped');updateButtons();
+    }
+    function startGPS(){
+      if(!navigator.geolocation){setStatus('Geolocation not supported');return;}
+      if(fixes.length){if(!confirm('Start a new session and clear current points? Export them first if needed.'))return;reset();}
+      mode='gps';setStatus('Waiting for location permission/GPS…');updateButtons();
+      watchId=navigator.geolocation.watchPosition(
+        p=>{
+          if(mode!=='gps')return;
+          addFix(p.coords.latitude,p.coords.longitude,p.coords.accuracy,'GPS',p.timestamp);
+          setStatus('Live GPS / device positioning','gps');
+        },
+        err=>{
+          if(mode!=='gps')return;
+          const msg=err.code===1?'Permission denied. Allow location in browser settings.':err.code===2?'Location unavailable. Try outdoors.':'Location request timed out. Try again.';
+          stopTracking();setStatus(msg);
+        },
+        {enableHighAccuracy:true,maximumAge:0,timeout:25000}
+      );
+    }
+    function startDemo(){
+      if(fixes.length){if(!confirm('Start a new session and clear current points? Export them first if needed.'))return;reset();}
+      mode='demo'; demoIndex=0;setStatus('SIMULATED route — not real GPS','demo');updateButtons();
+      // Reproducible illustrative loop near Mbarara; never shown as actual user's location.
+      const path=[[-0.6070,30.6550],[-0.6068,30.6552],[-0.6066,30.6554],[-0.6064,30.6557],[-0.6062,30.6559],[-0.6060,30.6562],[-0.6058,30.6565],[-0.6056,30.6568],[-0.6054,30.6570]];
+      const step=()=>{
+        if(demoIndex>=path.length){stopTracking();setStatus('Simulation finished (not real GPS)');return;}
+        const [lat,lng]=path[demoIndex++];addFix(lat,lng,8,'DEMO');
+      };
+      step();timer=setInterval(step,1800);
+    }
+    function reset(){
+      stopTracking();fixes=[];route=[];totalMeters=0;demoIndex=0;
+      routeLine.setLatLngs([]);
+      if(marker){map.removeLayer(marker);marker=null;}
+      if(accuracyCircle){map.removeLayer(accuracyCircle);accuracyCircle=null;}
+      ['lat','lng','accuracy','updated'].forEach(id=>el(id).textContent='—');
+      el('distance').textContent='0 m';el('points').textContent='0';setStatus('Not tracking');updateButtons();
+    }
+    function download(name,mime,contents){
+      const blob=new Blob([contents],{type:mime}),url=URL.createObjectURL(blob),a=document.createElement('a');
+      a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+    }
+    function exportCSV(){
+      const rows=['timestamp_utc,latitude,longitude,accuracy_m,source',...fixes.map(p=>`${new Date(p.time).toISOString()},${p.lat},${p.lng},${p.accuracy??''},${p.source}`)];
+      download('geotrack_positions.csv','text/csv;charset=utf-8',rows.join('\n'));
+    }
+    function exportGeoJSON(){
+      const features=[...fixes.map(p=>({type:'Feature',geometry:{type:'Point',coordinates:[p.lng,p.lat]},properties:{timestamp:new Date(p.time).toISOString(),accuracy_m:p.accuracy,source:p.source}}))];
+      if(route.length>1)features.push({type:'Feature',geometry:{type:'LineString',coordinates:route.map(p=>[p.lng,p.lat])},properties:{kind:'filtered-route',distance_m:Math.round(totalMeters)}});
+      download('geotrack_route.geojson','application/geo+json',JSON.stringify({type:'FeatureCollection',features},null,2));
+    }
+    el('start').addEventListener('click',startGPS);el('stop').addEventListener('click',stopTracking);
+    el('demo').addEventListener('click',startDemo);el('reset').addEventListener('click',reset);
+    el('csv').addEventListener('click',exportCSV);el('geojson').addEventListener('click',exportGeoJSON);
+    document.addEventListener('visibilitychange',()=>{if(document.hidden && mode!=='idle')stopTracking();});
+    updateButtons();
+  </script>
+</body>
+</html>
